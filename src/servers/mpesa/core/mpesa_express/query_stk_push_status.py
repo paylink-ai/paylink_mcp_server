@@ -6,7 +6,8 @@ from typing import Dict, Any
 
 async def query_stk_push_status(
     access_token: str,
-    checkout_request_id: str
+    checkout_request_id: str,
+    headers: Dict[str, str] = None
 ) -> Dict[str, Any]:
     """
     Queries the status of a previously initiated M-Pesa STK Push transaction.
@@ -19,9 +20,18 @@ async def query_stk_push_status(
         Dict[str, Any]: A JSON object containing the result of the query. Includes ResultCode and status description.
     """
 
-    business_shortcode = os.getenv("BUSINESS_SHORTCODE")
-    passkey = os.getenv("PASSKEY")
-    base_url = os.getenv("BASE_URL")
+    # Get business shortcode and passkey from headers if available, otherwise from env vars
+    business_shortcode = headers.get("MPESA_BUSINESS_SHORTCODE") if headers else None
+    passkey = headers.get("MPESA_PASSKEY") if headers else None
+    base_url = headers.get("MPESA_BASE_URL") if headers else None
+    
+    # Fallback to environment variables if not in headers
+    if not business_shortcode:
+        business_shortcode = os.getenv("BUSINESS_SHORTCODE")
+    if not passkey:
+        passkey = os.getenv("PASSKEY")
+    if not base_url:
+        base_url = os.getenv("BASE_URL")
 
     if not all([business_shortcode, passkey, base_url]):
         return {"error": "Missing M-Pesa environment variables"}

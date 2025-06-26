@@ -10,6 +10,7 @@ from src.servers.mpesa.core.c2b.initiate_c2b_payment import initiate_c2b_payment
 from src.servers.mpesa.core.b2c.disburse_funds import disburse_funds
 from src.servers.mpesa.utils.auth import get_access_token
 from starlette.requests import Request
+from src.tracing.async_trace import async_trace
 
 
 class MpesaTools:
@@ -26,6 +27,7 @@ class MpesaTools:
         Registers available tools
         """
         @self.mcp.tool()
+        @async_trace
         async def stk_push(
             ctx: Context,
             phone_number: str,
@@ -70,6 +72,7 @@ class MpesaTools:
                 return {"error": f"Failed to initiate STK push: {str(e)}"}
 
         @self.mcp.tool()
+        @async_trace
         async def stk_push_status(
             ctx: Context,
             checkout_request_id: str,
@@ -99,6 +102,7 @@ class MpesaTools:
                 return {"error": f"Failed to query STK push status: {str(e)}"}
 
         @self.mcp.tool()
+        @async_trace
         async def generate_qr_code(
             ctx: Context,
             merchant_name: str,

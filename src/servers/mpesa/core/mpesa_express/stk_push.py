@@ -3,12 +3,10 @@ import time
 import httpx
 import base64
 from typing import Dict, Any
-from paylink_tracing.trace import async_trace
-
+from src.tracing.async_trace import async_trace
 from dotenv import load_dotenv
 load_dotenv(override=True)
 
-# @async_trace
 async def initiate_stk_push(
     access_token: str,  # Changed from Dict to str
     phone_number: str,  

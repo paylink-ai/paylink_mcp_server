@@ -21,9 +21,6 @@ logger = logging.getLogger(__name__)
 # Load env
 load_dotenv(override=True)
 
-
-
-
 # Create an instance of the MCP server with a lifespan context
 mcp = FastMCP(
     "PayLink_MCP_server",

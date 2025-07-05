@@ -4,15 +4,17 @@ import httpx
 import base64
 from typing import Dict, Any
 from src.tracing.async_trace import async_trace
+from dotenv import load_dotenv
+load_dotenv(override=True)
 
-@async_trace
 async def initiate_stk_push(
-    access_token: str,
-    phone_number: str,
+    access_token: str,  # Changed from Dict to str
+    phone_number: str,  
     amount: int,
     account_reference: str,
     transaction_desc: str,
     transaction_type: str,
+    headers: Dict[str, str] = None,
 ) -> Dict[str, Any]:
     """
     Initiates an M-Pesa STK Push (Sim Tool Kit) transaction, which allows a merchant to request a customer to authorize a payment through M-Pesa.
@@ -31,13 +33,22 @@ async def initiate_stk_push(
         Dict[str, Any]: A JSON object containing the result of the request. On success, includes the transaction's status and details. In case of failure, an error message will be returned.
 
     """
-    business_shortcode = os.getenv("BUSINESS_SHORTCODE")
-    passkey = os.getenv("PASSKEY")
-    callback_url = os.getenv("CALLBACK_URL")
-    base_url = os.getenv("BASE_URL")
+    # Initialize variables to avoid UnboundLocalError
+    business_shortcode = None
+    passkey = None
+    callback_url = None
+    base_url = None
+    
+    # Get values from headers if provided
+    if headers:
+        business_shortcode = headers.get("MPESA_BUSINESS_SHORTCODE")
+        passkey = headers.get("MPESA_PASSKEY")
+        callback_url = headers.get("MPESA_CALLBACK_URL")
+        base_url = headers.get("MPESA_BASE_URL")
 
+    
     if not all([business_shortcode, passkey, callback_url, base_url]):
-        return {"error": "Missing M-Pesa STK environment variables"}
+        return {"error": "Missing M-Pesa STK configuration"}
 
     if not phone_number.startswith("254") or len(phone_number) != 12:
         return {"error": "Invalid phone number format. Must be 254XXXXXXXXX"}
@@ -74,19 +85,26 @@ async def initiate_stk_push(
         "TransactionDesc": transaction_desc,
     }
 
-    headers = {
+    # Use the access token directly since it's now passed as a string
+    if not access_token:
+        return {"error": "Invalid access token"}
+        
+    request_headers = {
         "Authorization": f"Bearer {access_token}",
         "Content-Type": "application/json",
     }
 
-    url = f"{base_url}/mpesa/stkpush/v1/processrequest"
+    # Ensure base_url is properly formatted
+    url = f"{base_url.rstrip('/')}/mpesa/stkpush/v1/processrequest"
 
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.post(url, json=payload, headers=headers)
+            response = await client.post(url, json=payload, headers=request_headers)
             response.raise_for_status()
             return response.json()
         except httpx.HTTPStatusError as e:
+            print(f"HTTP Error: {e.response.status_code} - {e.response.text}")
             return {"error": "HTTP Error", "details": e.response.text}
         except Exception as e:
-            return {"error": f"STK Push failed: {e}"}
+            print(f"STK Push failed: {str(e)}")
+            return {"error": f"STK Push failed: {str(e)}"}

@@ -11,7 +11,7 @@ from starlette.exceptions import HTTPException
 from starlette.requests import Request
 from starlette.responses import JSONResponse, RedirectResponse, Response
 
-from src.servers.mpesa.utils.auth import get_access_token, refresh_access_token
+from src.servers.mpesa.utils.auth import get_access_token
 from src.servers.mpesa.models.context import MPesaContext
 from src.servers.mpesa.tools.mpesa_tools import MpesaTools
 
@@ -21,57 +21,19 @@ logger = logging.getLogger(__name__)
 # Load env
 load_dotenv(override=True)
 
-
-# Define the application lifespan context manager
-# This handles setup and teardown logic for the app's lifecycle
-@asynccontextmanager
-async def app_lifespan(app: FastMCP) -> AsyncIterator[MPesaContext]:
-    try:
-        # Fetch initial access token from Safaricom API
-        token_data = await get_access_token()
-
-        # Create and store context containing the token and expiry info
-        context = MPesaContext(
-            access_token=token_data["access_token"],
-            expires_at=time.time() + token_data["expires_in"],
-            refresh_task=None,
-        )
-
-        # Start a background task to refresh the token before it expires
-        context.refresh_task = asyncio.create_task(refresh_access_token(context))
-
-        # Yield the context to the server for use in tools
-        yield context
-    finally:
-        # On shutdown, cancel the token refresh task gracefully
-        if context.refresh_task:
-            context.refresh_task.cancel()
-            try:
-                await context.refresh_task
-            except asyncio.CancelledError:
-                pass
-
-
 # Create an instance of the MCP server with a lifespan context
 mcp = FastMCP(
     "PayLink_MCP_server",
-    host="0.0.0.0",  # Only used for SSE transport (localhost)
-    port=8050,  # Only used for SSE transport (set this to any port)
-    lifespan=app_lifespan,
+    host="0.0.0.0",
+    port=8050,
     stateless_http=True
 )
 
 @mcp.custom_route("/mpesa/callback", methods=["POST"])
 async def mpesa_callback_handler(request: Request) -> Response:
     """
-    TODO: Super callback
-        pass the request and the provider
     Handle M-Pesa webhook callback.
-    
-    
     """
-    
-    
     try:
         # Read the request body (asynchronous)
         body = await request.body()
@@ -99,5 +61,5 @@ MpesaTools(mcp=mcp)
 # Entry point to start the MCP server
 if __name__ == "__main__":
 
-    mcp.run(transport="stdio")
-    # mcp.run(transport="streamable-http")
+    # mcp.run(transport="stdio")
+    mcp.run(transport="streamable-http")

@@ -3,7 +3,6 @@ from typing import Any, Dict
 import locale
 from babel import Locale
 import httpx
-import requests
 
 from src.tracing.async_trace import async_airtel_trace
 from src.utils.helpers import random_string

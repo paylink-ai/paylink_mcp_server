@@ -1,10 +1,11 @@
 import json
 
 from mcp.server.fastmcp import Context
-from typing import Dict, Any
+from typing import Dict, Any, Coroutine
 
 from src.servers.airtel.core.collections.ussd_push import ussd_push
 from src.servers.airtel.models.context import AirtelContext
+from src.servers.airtel.utils.auth import get_access_token
 
 
 class AirtelTools:
@@ -31,19 +32,20 @@ class AirtelTools:
                 ctx: Context,
                 phone_number: str,
                 amount: int,
-                country: str | None,
-        ) -> Dict[str, Any]:
+        ) -> dict[str, str] | str | Coroutine[Any, Any, AirtelContext]:
             try:
                 airtel_ctx: AirtelContext = ctx.request_context.lifespan_context
 
-                print("Initiating Airtel USSD Push...")
+                context = await get_access_token()
+                # if not airtel_ctx or not airtel_ctx.access_token:
+                #     raise ValueError("Airtel access token is not available. Please authenticate first.")
+                return context.access_token
 
                 # Call the function that initiates the USSD Push and get the response
                 response = await ussd_push(
-                    airtel_ctx.access_token,
+                    context.access_token,
                     phone_number,
                     amount,
-                    country,
                 )
 
                 return json.dumps(response, indent=2)

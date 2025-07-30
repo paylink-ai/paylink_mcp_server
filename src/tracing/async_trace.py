@@ -7,6 +7,8 @@ from typing import Any, Callable
 import httpx
 from dotenv import load_dotenv
 import uuid
+
+from paylink_tracing.db import trace_collection
 from starlette.requests import Request
 from mcp.server.fastmcp import Context
 

@@ -11,6 +11,7 @@ from starlette.exceptions import HTTPException
 from starlette.requests import Request
 from starlette.responses import JSONResponse, RedirectResponse, Response
 
+from src.servers.airtel.tools.airtel_tools import AirtelTools
 from src.servers.mpesa.utils.auth import get_access_token
 from src.servers.mpesa.models.context import MPesaContext
 from src.servers.mpesa.tools.mpesa_tools import MpesaTools
@@ -56,7 +57,8 @@ async def mpesa_callback_handler(request: Request) -> Response:
         return Response(status_code=500, content=f"Error processing webhook: {str(e)}")
 
 
-MpesaTools(mcp=mcp)
+# MpesaTools(mcp=mcp)
+AirtelTools(mcp=mcp)
 
 # Entry point to start the MCP server
 if __name__ == "__main__":
